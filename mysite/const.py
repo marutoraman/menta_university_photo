@@ -1,0 +1,3 @@
+class USER_TYPE:
+    STUDENT_USER = 0
+    EDIT_USER = 1

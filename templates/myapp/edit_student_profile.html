@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block header %}
+    <h1>学生用のプロフィール編集画面</h1>
+{% endblock %}
+
+{% block contents %}
+    {% include 'message.html' %}
+    <form name="main_form" method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div>
+            {{ form.nickname | attr:"placeholder:ニックネームを入力" | add_class:"any_class_name" }}
+        </div>
+        <div>
+            {{ form.university_name | attr:"placeholder:大学を選択" | add_class:"any_class_name" }}
+        </div>
+        <div>
+            {{ form.major_name | attr:"placeholder:学部を選択" | add_class:"any_class_name" }}
+        </div>
+        <button type="submit" name="save" class="any_class_name">
+            保存する
+        </button>
+    </form>
+{% endblock %}
+
+{% block scripts %}
+    <script>
+        const CSRF_TOKEN = '{{ csrf_token }}'
+        const majorNameElm = document.getElementById("id_major_name")
+        document.getElementById("id_university_name").addEventListener("input", async (e)=>{
+            const res = await fetchMajors(e.target.value)
+            const majors = await res.json()
+            console.log(majors)
+            generateMajorSelection(majors, majorNameElm)
+        })
+        async function fetchMajors(universityId){
+            res = await executeAPI("{% url 'myapp:major_api' %}" + "?university_id=" + universityId, null, "GET")
+            return await res
+        }
+
+        async function executeAPI(url, body, method) {
+            console.log(url)
+            try {
+                const headers = {
+                    'content-type': 'application/json',
+                    'X-CSRFToken': CSRF_TOKEN
+                }
+                const res = await fetch(
+                    url, 
+                    {
+                        method: method,
+                        headers: headers,
+                        body: body
+                    }
+                )
+                if (res.status >= 200 && res.status < 300) {
+                    return await res;
+                }
+                else {
+                    alert("APIエラー")
+                    console.log(res)
+                    return null;
+                }
+            } catch (e) {
+                console.log(e);
+                return null;
+            }
+        }
+
+        async function removeAllSelectOptions(elm){
+            let options = await elm.getElementsByTagName("option");
+            for(let i = options.length-1; i >= 0; i-- ) {
+                elm.removeChild( options.item( i ) );
+            }
+        } 
+
+        async function generateMajorSelection(majors, selectionElm){
+            await removeAllSelectOptions(selectionElm);
+            let option = document.createElement('option');
+            for(let major of majors){
+                let option = document.createElement('option');
+                option.innerHTML = major.major_name;
+                option.value = major.id;
+                selectionElm.appendChild(option);
+                
+            }
+        }
+    </script>
+{% endblock %}
